@@ -66,6 +66,8 @@ class SQLQueryExecutor(QMainWindow):
     
         self.user_details_dialog = UserDetailsDialog()
 
+        self.user_details_dialog = UserDetailsDialog()
+
     def _setup_main_window(self):
         """Set up the main window properties."""
         self.setWindowTitle("SQL Query Executor")
@@ -150,7 +152,7 @@ class SQLQueryExecutor(QMainWindow):
         conn = connect_to_db(host, db, username, password)
         qep = execute_query(conn, query)
         getAllRelationsInfo(qep)
-        self.show_disk_block_info()
+        self.show_disk_block_info(conn, qep)
         visualize_qep(qep)
 
     def show_disk_block_info(self):
@@ -178,7 +180,6 @@ class SQLQueryExecutor(QMainWindow):
             relation_blocks_container = QWidget()
             relation_blocks_layout = QVBoxLayout(relation_blocks_container)
             relation_blocks_scroll_area.setWidget(relation_blocks_container)
-
             # Create buttons for each block ID
             for block_id in block_ids:
                 button = QPushButton(f"Block ID: {block_id}")
@@ -186,7 +187,7 @@ class SQLQueryExecutor(QMainWindow):
                     QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
                 # Connect button to function
                 button.clicked.connect(
-                    lambda: self.show_block_content(conn, relation, block_id))
+                    lambda _, r=relation,b=block_id: self.show_block_content(conn, r, b))
                 relation_blocks_layout.addWidget(button)
 
             relations_layout.addWidget(relation_blocks_scroll_area)
@@ -194,14 +195,7 @@ class SQLQueryExecutor(QMainWindow):
             relations_column_widget.setLayout(relations_layout)
             self.relation_columns.addWidget(relations_column_widget)
 
-    ''' TODO:
-    - fix 1 below function to update properly when clicking some other block
-    
-    - fix 2
-        1. update `get_block_contents` to handle ranged ids (those shown in brackets eg (322,3324) is blocks from id 322 to 3324)
-        2. currently for single block ids shown as vertically ([relation block] id heading label followed by the content text objects)
-        3. for ranged queries show sequentially ([relation name] block id [start ...  end] heading label followed by the content text objects for each id)
-    '''
+   
 
     def show_block_content(self, conn, relation, block_id):
         content = get_block_contents(conn, relation, block_id)

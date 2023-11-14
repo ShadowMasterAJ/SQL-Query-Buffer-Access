@@ -122,11 +122,18 @@ def get_block_contents(conn, relation, block_id):
     """
 
     cursor = conn.cursor()
-    query = f"""
-    SELECT ctid, *
-    FROM {relation}
-    WHERE (ctid::text::point)[0]::bigint = {block_id};
-    """
+    if isinstance(block_id,tuple):
+        query = f"""
+        SELECT ctid, *
+        FROM {relation}
+        WHERE (ctid::text::point)[0]::bigint BETWEEN {block_id[0]} and {block_id[1]};
+        """
+    else:
+        query = f"""
+        SELECT ctid, *
+        FROM {relation}
+        WHERE (ctid::text::point)[0]::bigint = {block_id};
+        """
     cursor.execute(query)
     content = cursor.fetchall()
     if content:
@@ -167,9 +174,10 @@ def get_relation_block_ids(conn, relation_name):
                 else:
                     i += 1
             return lst
-
-        ls = group_consecutive_numbers_in_place(
-            sorted([row[0] for row in out]))
+        ls = [row[0] for row in out]
+        # ls = group_consecutive_numbers_in_place(
+        #     sorted(ls))
+        
         print(relation_name, 'blocks:', ls)
         return ls
     else:
