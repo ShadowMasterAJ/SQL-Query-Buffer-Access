@@ -110,7 +110,26 @@ def execute_query(conn, query):
     except Exception as e:
         print(f"Error executing query: {e}")
         return None
-
+def get_No_Of_Buffers(conn,relation,block_id):
+    cursor = conn.cursor()
+    try:
+        query = f"""
+        EXPLAIN (ANALYZE , BUFFERS TRUE, COSTS FALSE)
+        SELECT ctid, *
+        FROM {relation}
+        WHERE (ctid::text::point)[0]::bigint = {block_id};
+        """
+        cursor.execute(query)
+        
+        qep=cursor.fetchall()
+        for tup in qep:
+            for value in tup:
+                if ("Buffers:" in value):
+                    return value
+    except Exception as e:
+        print(f"Error executing query: {e}")
+        return None
+    
 
 def get_block_contents(conn, relation, block_id):
     """Get contents of block with block_id of relation.
@@ -137,7 +156,7 @@ def get_block_contents(conn, relation, block_id):
     cursor.execute(query)
     content = cursor.fetchall()
     if content:
-        print(relation, block_id, 'content:', content)
+        #print(relation, block_id, 'content:', content)
         return content
     else:
         raise ValueError("No data found for the given block ID.")
@@ -288,7 +307,6 @@ def visualize_qep(qep_json_str):
             node_size=2000, arrowstyle='->', arrowsize=20)
     plt.title('Query Execution Plan')
     plt.show()
-
 
 def getAllRelationsInfo(qep_json_str):
     qep_json = json.loads(qep_json_str)

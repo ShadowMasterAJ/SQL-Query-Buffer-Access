@@ -152,7 +152,7 @@ class SQLQueryExecutor(QMainWindow):
         conn = connect_to_db(host, db, username, password)
         qep = execute_query(conn, query)
         getAllRelationsInfo(qep)
-        self.show_disk_block_info(conn, qep)
+        self.show_disk_block_info()
         visualize_qep(qep)
 
     def show_disk_block_info(self):
@@ -199,6 +199,7 @@ class SQLQueryExecutor(QMainWindow):
 
     def show_block_content(self, conn, relation, block_id):
         content = get_block_contents(conn, relation, block_id)
+        bufferValue= get_No_Of_Buffers(conn,relation,block_id)
 
         # # Clear existing widgets from the layout
         for i in reversed(range(self.block_contents_layout.count())):
@@ -208,7 +209,7 @@ class SQLQueryExecutor(QMainWindow):
                 widget_to_remove.deleteLater()
 
         self.block_contents_layout.addWidget(
-            QLabel(f"Relation: {relation} | Block ID: {block_id}"))
+            QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue}"))
 
         for item in content:
             block_content_text = QTextEdit()
