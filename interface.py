@@ -5,6 +5,57 @@ from explore import *
 # TODO: add functionality for another window to retrieve user db details (can follow ref github for this)
 
 
+from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton
+
+from explore import connect_to_db
+
+
+class UserDetailsDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("User Details")
+        self.setGeometry(400, 200, 400, 200)
+
+        self.host_label = QLabel("Host:")
+        self.host_line_edit = QLineEdit()
+        self.db_label = QLabel("Database:")
+        self.db_line_edit = QLineEdit()
+        self.username_label = QLabel("Username:")
+        self.username_line_edit = QLineEdit()
+        self.password_label = QLabel("Password:")
+        self.password_line_edit = QLineEdit()
+        self.password_line_edit.setEchoMode(QLineEdit.EchoMode.Password)
+
+        self.connected_user_label = QLabel("Connected User: N/A") 
+
+        self.submit_button = QPushButton("Conenct")
+        self.submit_button.clicked.connect(self.accept)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.host_label)
+        layout.addWidget(self.host_line_edit)
+        layout.addWidget(self.db_label)
+        layout.addWidget(self.db_line_edit)
+        layout.addWidget(self.username_label)
+        layout.addWidget(self.username_line_edit)
+        layout.addWidget(self.password_label)
+        layout.addWidget(self.password_line_edit)
+        layout.addWidget(self.connected_user_label)
+        layout.addWidget(self.submit_button)
+
+        self.setLayout(layout)
+
+    def get_user_details(self):
+        host = self.host_line_edit.text()
+        db = self.db_line_edit.text()
+        username = self.username_line_edit.text()
+        password = self.password_line_edit.text()
+        return host, db, username, password
+    def set_connected_user_label(self, username):
+        self.connected_user_label.setText(f"Connected User: {username}")
+
+
 class SQLQueryExecutor(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -12,6 +63,8 @@ class SQLQueryExecutor(QMainWindow):
         self._setup_central_widget()  # Call this to set up the central widget
         self._setup_query_components()
         self._setup_disk_block_components()
+    
+        self.user_details_dialog = UserDetailsDialog()
 
     def _setup_main_window(self):
         """Set up the main window properties."""
@@ -34,6 +87,10 @@ class SQLQueryExecutor(QMainWindow):
         self.query_text = QTextEdit()
         self.queryInputLayout.addWidget(self.query_text)
 
+        self.user_details_button = QPushButton("User Details")
+        self.user_details_button.clicked.connect(self.show_user_details_dialog)
+        self.queryInputLayout.addWidget(self.user_details_button)
+
         self.submit_button = QPushButton("Execute Query")
         self.submit_button.clicked.connect(self.on_submit_query)
         self.queryInputLayout.addWidget(self.submit_button)
@@ -45,6 +102,18 @@ class SQLQueryExecutor(QMainWindow):
         self.queryInputLayout.addWidget(self.quit_button)
 
         self.main_layout.addLayout(self.queryInputLayout, stretch=2)
+
+    def show_user_details_dialog(self):
+        result = self.user_details_dialog.exec()
+        if result == QDialog.DialogCode.Accepted:
+            host, db, username, password = self.user_details_dialog.get_user_details()
+            # Use the obtained user details as needed (e.g., connect to the database)
+
+            conn = connect_to_db(host, db, username, password)
+
+            if conn:
+                # Update the connected user label in the UserDetailsDialog
+                self.user_details_dialog.set_connected_user_label(username)
 
     def _setup_disk_block_components(self):
         """Set up components for displaying disk block information."""
@@ -77,7 +146,8 @@ class SQLQueryExecutor(QMainWindow):
 
     def on_submit_query(self):
         query = self.query_text.toPlainText()
-        conn = connect_to_db()
+        host, db, username, password = self.user_details_dialog.get_user_details()
+        conn = connect_to_db(host, db, username, password)
         qep = execute_query(conn, query)
         getAllRelationsInfo(qep)
         self.show_disk_block_info()
@@ -85,7 +155,8 @@ class SQLQueryExecutor(QMainWindow):
 
     def show_disk_block_info(self):
         query = self.query_text.toPlainText()
-        conn = connect_to_db()
+        host, db, username, password = self.user_details_dialog.get_user_details()
+        conn = connect_to_db(host, db, username, password)
         qep = execute_query(conn, query)
         disk_blocks_info = get_disk_blocks_accessed(conn, qep)
 

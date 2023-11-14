@@ -43,13 +43,13 @@ class Node:
             child.print_tree(level + 1)
 
 
-def connect_to_db():
+def connect_to_db(host, db, username, password):
     try:
         conn = psycopg2.connect(
-            host="localhost",
-            database="postgres",
-            user="postgres",
-            password="root",
+            host=host,
+            database=db,
+            user=username,
+            password=password,
             port=5432
         )
         print("CONNECTED TO DATABASE!")
