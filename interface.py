@@ -10,7 +10,10 @@ import threading
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    filename='app.log',  # Log messages will be written to this file
+                    filemode='w')  # 'w' for overwrite mode, 'a' for append mode
+
 
 class UserDetailsDialog(QDialog):
     def __init__(self):
@@ -29,7 +32,7 @@ class UserDetailsDialog(QDialog):
         self.password_line_edit = QLineEdit()
         self.password_line_edit.setEchoMode(QLineEdit.EchoMode.Password)
 
-        self.connected_user_label = QLabel("Connected User: N/A") 
+        self.connected_user_label = QLabel("Connected User: N/A")
 
         self.submit_button = QPushButton("Connect")
         self.submit_button.clicked.connect(self.accept)
@@ -54,6 +57,7 @@ class UserDetailsDialog(QDialog):
         username = self.username_line_edit.text()
         password = self.password_line_edit.text()
         return host, db, username, password
+
     def set_connected_user_label(self, username):
         self.connected_user_label.setText(f"Connected User: {username}")
 
@@ -65,7 +69,7 @@ class SQLQueryExecutor(QMainWindow):
         self._setup_central_widget()  # Call this to set up the central widget
         self._setup_query_components()
         self._setup_disk_block_components()
-    
+
         self.user_details_dialog = UserDetailsDialog()
 
         self.user_details_dialog = UserDetailsDialog()
@@ -102,7 +106,7 @@ class SQLQueryExecutor(QMainWindow):
         self.visualise_query = QPushButton("Visualise QEP")
         self.visualise_query.clicked.connect(self.on_click)
         self.queryInputLayout.addWidget(self.visualise_query)
-        
+
         self.quit_button = QPushButton("Quit", self)
         self.quit_button.clicked.connect(lambda: QApplication.quit())
         self.quit_button.setSizePolicy(
@@ -158,7 +162,8 @@ class SQLQueryExecutor(QMainWindow):
 
     def visualise_qep(self):
         try:
-            subprocess.Popen(["npm", "run", "serve"], cwd="pev2_component")
+            subprocess.Popen(["npm", "run", "serve"],
+                             cwd="pev2_component", shell=True)
             logging.info("Server starting...")
             self.wait_for_server_ready()
         except Exception as e:
@@ -179,18 +184,18 @@ class SQLQueryExecutor(QMainWindow):
             webbrowser.open("http://localhost:8080")
         else:
             logging.warning("Server not ready after 30 seconds.")
-        
+
     def on_submit_query(self):
         query = self.query_text.toPlainText()
         host, db, username, password = self.user_details_dialog.get_user_details()
         conn = connect_to_db(host, db, username, password)
-        print('DB Details',host, db, username, password)
+        print('DB Details', host, db, username, password)
         qep = execute_query(conn, query)
         getAllRelationsInfo(qep)
-        self.show_disk_block_info(conn,qep)
+        self.show_disk_block_info(conn, qep)
         # visualize_qep(qep)
 
-    def show_disk_block_info(self,conn,qep):
+    def show_disk_block_info(self, conn, qep):
         disk_blocks_info = get_disk_blocks_accessed(conn, qep)
 
         # Clear existing columns
@@ -218,7 +223,7 @@ class SQLQueryExecutor(QMainWindow):
                     QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
                 # Connect button to function
                 button.clicked.connect(
-                    lambda _, r=relation,b=block_id: self.show_block_content(conn, r, b))
+                    lambda _, r=relation, b=block_id: self.show_block_content(conn, r, b))
                 relation_blocks_layout.addWidget(button)
 
             relations_layout.addWidget(relation_blocks_scroll_area)
@@ -228,8 +233,10 @@ class SQLQueryExecutor(QMainWindow):
 
     def show_block_content(self, conn, relation, block_id):
         content = get_block_contents(conn, relation, block_id)
-        bufferValue= get_No_Of_Buffers(conn,relation,block_id)
-        if 'shared hit'
+        bufferValue = get_No_Of_Buffers(conn, relation, block_id)
+
+        split = bufferValue.split(' ')
+
         # # Clear existing widgets from the layout
         for i in reversed(range(self.block_contents_layout.count())):
             widget_to_remove = self.block_contents_layout.itemAt(i).widget()
