@@ -171,19 +171,28 @@ class SQLQueryExecutor(QMainWindow):
 
     def wait_for_server_ready(self):
         server_ready = False
-        for _ in range(10):  # Try for 30 seconds
-            try:
-                with socket.create_connection(("localhost", 8080), timeout=1):
-                    server_ready = True
-                    break
-            except OSError:
+        port = 8080
+
+        for _ in range(3):  # Try for 30 seconds
+            for p in range(8080, 8090):  # Check ports from 8080 to 8089
+                try:
+                    with socket.create_connection(("localhost", p), timeout=1):
+                        server_ready = True
+                        port = p  # Store the port that was successful
+                        break  # Exit the port loop
+                except OSError:
+                    continue  # Try next port
+
+            if server_ready:
+                break  # Exit the time loop if a connection was made
+            else:
                 time.sleep(1)
 
         if server_ready:
-            logging.info("Server ready, opening browser...")
-            webbrowser.open("http://localhost:8080")
+            logging.info(f"Server ready, opening browser on port {port}...")
+            webbrowser.open(f"http://localhost:{port}")
         else:
-            logging.warning("Server not ready after 30 seconds.")
+            logging.warning("Server not ready after 3 seconds.")
 
     def on_submit_query(self):
         query = self.query_text.toPlainText()
