@@ -1,13 +1,18 @@
-from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QLabel, QTextEdit, QPushButton, QVBoxLayout, QWidget, QSizePolicy, QScrollArea, QApplication
-
+from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QLabel, QTextEdit, QPushButton, QVBoxLayout, QWidget, QSizePolicy, QScrollArea, QApplication, QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton
 from explore import *
+from PyQt6.QtCore import QTimer
+import sys
+import socket
+import time
+import subprocess
+import webbrowser
+import threading
+import logging
 
-# TODO: add functionality for another window to retrieve user db details (can follow ref github for this)
-
-
-from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton
-
-from explore import connect_to_db
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    filename='app.log',  # Log messages will be written to this file
+                    filemode='w')  # 'w' for overwrite mode, 'a' for append mode
 
 
 class UserDetailsDialog(QDialog):
@@ -27,7 +32,7 @@ class UserDetailsDialog(QDialog):
         self.password_line_edit = QLineEdit()
         self.password_line_edit.setEchoMode(QLineEdit.EchoMode.Password)
 
-        self.connected_user_label = QLabel("Connected User: N/A") 
+        self.connected_user_label = QLabel("Connected User: N/A")
 
         self.submit_button = QPushButton("Connect")
         self.submit_button.clicked.connect(self.accept)
@@ -52,6 +57,7 @@ class UserDetailsDialog(QDialog):
         username = self.username_line_edit.text()
         password = self.password_line_edit.text()
         return host, db, username, password
+
     def set_connected_user_label(self, username):
         self.connected_user_label.setText(f"Connected User: {username}")
 
@@ -63,7 +69,7 @@ class SQLQueryExecutor(QMainWindow):
         self._setup_central_widget()  # Call this to set up the central widget
         self._setup_query_components()
         self._setup_disk_block_components()
-    
+
         self.user_details_dialog = UserDetailsDialog()
 
         self.user_details_dialog = UserDetailsDialog()
@@ -99,6 +105,10 @@ class SQLQueryExecutor(QMainWindow):
         self.submit_button = QPushButton("Execute Query")
         self.submit_button.clicked.connect(self.on_submit_query)
         self.queryInputLayout.addWidget(self.submit_button)
+
+        self.visualise_query = QPushButton("Visualise QEP")
+        self.visualise_query.clicked.connect(self.on_click)
+        self.queryInputLayout.addWidget(self.visualise_query)
 
         self.quit_button = QPushButton("Quit", self)
         self.quit_button.clicked.connect(lambda: QApplication.quit())
@@ -151,6 +161,44 @@ class SQLQueryExecutor(QMainWindow):
 
         self.main_layout.addLayout(self.disk_block_layout, stretch=3)
 
+    def on_click(self):
+        logging.info("Button clicked, launching visualise_qep thread...")
+        threading.Thread(target=self.visualise_qep, daemon=True).start()
+
+    def visualise_qep(self):
+        try:
+            subprocess.Popen(["npm", "run", "serve"],
+                             cwd="pev2_component", shell=True)
+            logging.info("Server starting...")
+            self.wait_for_server_ready()
+        except Exception as e:
+            logging.error(f"Error starting server: {e}")
+
+    def wait_for_server_ready(self):
+        server_ready = False
+        port = 8080
+
+        for _ in range(3):  # Try for 30 seconds
+            for p in range(8080, 8090):  # Check ports from 8080 to 8089
+                try:
+                    with socket.create_connection(("localhost", p), timeout=1):
+                        server_ready = True
+                        port = p  # Store the port that was successful
+                        break  # Exit the port loop
+                except OSError:
+                    continue  # Try next port
+
+            if server_ready:
+                break  # Exit the time loop if a connection was made
+            else:
+                time.sleep(1)
+
+        if server_ready:
+            logging.info(f"Server ready, opening browser on port {port}...")
+            webbrowser.open(f"http://localhost:{port}")
+        else:
+            logging.warning("Server not ready after 3 seconds.")
+
     def on_submit_query(self):
         query = self.query_text.toPlainText()
         host, db, username, password = self.user_details_dialog.get_user_details()
@@ -163,8 +211,8 @@ class SQLQueryExecutor(QMainWindow):
             # Check if the query execution is successful
             if qep:
                 getAllRelationsInfo(qep)
-                self.show_disk_block_info()
-                visualize_qep(qep)
+                self.show_disk_block_info(conn, qep)
+                #visualize_qep(qep)
             else:
                 # Handle the case where the query execution fails
                 print("Query execution failed.")
@@ -172,11 +220,7 @@ class SQLQueryExecutor(QMainWindow):
             # Handle the case where the database connection fails
             print("Database connection failed.")
 
-    def show_disk_block_info(self):
-        query = self.query_text.toPlainText()
-        host, db, username, password = self.user_details_dialog.get_user_details()
-        conn = connect_to_db(host, db, username, password)
-        qep = execute_query(conn, query)
+    def show_disk_block_info(self, conn, qep):
         disk_blocks_info = get_disk_blocks_accessed(conn, qep)
 
         # Clear existing columns
@@ -204,7 +248,7 @@ class SQLQueryExecutor(QMainWindow):
                     QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
                 # Connect button to function
                 button.clicked.connect(
-                    lambda _, r=relation,b=block_id: self.show_block_content(conn, r, b))
+                    lambda _, r=relation, b=block_id: self.show_block_content(conn, r, b))
                 relation_blocks_layout.addWidget(button)
 
             relations_layout.addWidget(relation_blocks_scroll_area)
@@ -212,11 +256,11 @@ class SQLQueryExecutor(QMainWindow):
             relations_column_widget.setLayout(relations_layout)
             self.relation_columns.addWidget(relations_column_widget)
 
-   
-
     def show_block_content(self, conn, relation, block_id):
         content = get_block_contents(conn, relation, block_id)
-        bufferValue= get_No_Of_Buffers(conn,relation,block_id)
+        bufferValue = get_No_Of_Buffers(conn, relation, block_id)
+
+        split = bufferValue.split(' ')
 
         # # Clear existing widgets from the layout
         for i in reversed(range(self.block_contents_layout.count())):
