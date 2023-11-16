@@ -1,5 +1,4 @@
 from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QLabel, QTextEdit, QPushButton, QVBoxLayout, QWidget, QSizePolicy, QScrollArea, QApplication, QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton
-from explore import *
 from PyQt6.QtCore import QTimer
 import sys
 import socket
@@ -8,6 +7,7 @@ import subprocess
 import webbrowser
 import threading
 import logging
+from explore import *
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -214,7 +214,6 @@ class SQLQueryExecutor(QMainWindow):
                 self.show_disk_block_info(conn, qep)
                 #visualize_qep(qep)
             else:
-                # Handle the case where the query execution fails
                 print("Query execution failed.")
         else:
             # Handle the case where the database connection fails

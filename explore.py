@@ -63,7 +63,6 @@ def connect_to_db(host='localhost', db='postgres', username='postgres', password
         print(f"Error: {e}")
         return None
 
-
 def make_json_parsable(data):
     # Replace 'True' and 'False' with lowercase equivalents
     data = data.replace('True', 'true').replace('False', 'false')
@@ -92,7 +91,6 @@ def make_json_parsable(data):
 
     return parsable_data
 
-
 def execute_query(conn, query):
     cursor = conn.cursor()
     try:
@@ -120,6 +118,7 @@ def execute_query(conn, query):
     except Exception as e:
         print(f"Error executing query: {e}")
         return None
+
 def get_No_Of_Buffers(conn,relation,block_id):
     cursor = conn.cursor()
     try:
@@ -140,7 +139,6 @@ def get_No_Of_Buffers(conn,relation,block_id):
         print(f"Error executing query: {e}")
         return None
     
-
 def get_block_contents(conn, relation, block_id):
     """Get contents of block with block_id of relation.
 
@@ -179,7 +177,6 @@ def get_block_contents(conn, relation, block_id):
         print(error_message)
         return None
     
-
 def get_relation_block_ids(conn, relation_name):
     """Get distinct block IDs for a given relation.
 
@@ -195,31 +192,11 @@ def get_relation_block_ids(conn, relation_name):
     cursor.execute(query)
     out = cursor.fetchall()
     if out is not None:
-        def group_consecutive_numbers_in_place(lst):
-            i = 0
-            while i < len(lst) - 1:
-                # Check if current and next elements are consecutive
-                if lst[i + 1] == lst[i] + 1:
-                    start = i
-                    # Find the end of the consecutive sequence
-                    while i < len(lst) - 1 and lst[i + 1] == lst[i] + 1:
-                        i += 1
-                    # Replace the start of the sequence with the tuple
-                    lst[start] = (lst[start], lst[i])
-                    # Delete the rest of the sequence
-                    del lst[start + 1:i + 1]
-                else:
-                    i += 1
-            return lst
         ls = [row[0] for row in out]
-        # ls = group_consecutive_numbers_in_place(
-        #     sorted(ls))
-        
-        print(relation_name, 'blocks:', ls)
+        # print(relation_name, 'blocks:', ls)
         return ls
     else:
         raise ValueError("No blocks found for the given relation.")
-
 
 def get_disk_blocks_accessed(conn, qep_json_str):
     blocks_accessed = {}
@@ -250,17 +227,6 @@ def get_disk_blocks_accessed(conn, qep_json_str):
                             block_ids.add(block_id)
                         blocks_accessed[relation_name] = block_ids
 
-            # TODO: may need updates
-            case "Hash Join" | "Merge Join" | "Nested Loop":
-                # For join operations, process each child as they likely involve scans
-                for child in node.children:
-                    child_blocks_accessed = process_node(child)
-                    for relation, block_ids in child_blocks_accessed.items():
-                        if relation in blocks_accessed:
-                            blocks_accessed[relation].update(block_ids)
-                        else:
-                            blocks_accessed[relation] = block_ids
-
             case _:
                 # Generic handler for other node types
                 for child in node.children:
@@ -275,7 +241,6 @@ def get_disk_blocks_accessed(conn, qep_json_str):
 
     # Starting the recursion with the root node
     return process_node(qep[0])
-
 
 def visualize_qep(qep_json_str):
     # Parse the JSON string
@@ -328,16 +293,6 @@ def visualize_qep(qep_json_str):
 
 def getAllRelationsInfo(qep_json_str):
     qep_json = json.loads(qep_json_str)
-    # try:
-    #     cursor = conn.cursor()
-    #     cursor.execute(
-    #                 f"SELECT DISTINCT (ctid::text::point)[0]::bigint as block_id \
-    #                 FROM {relation_name};"
-    #             )
-    #     out = cursor.fetchall()
-    # except Exception as e:
-    #         print(f"Error retrieving relation block info: {e}")
-    #         return None
     nodes = [Node(plan["Plan"]) for plan in qep_json]
     for node in nodes:
         node.print_tree()
