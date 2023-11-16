@@ -1,13 +1,5 @@
-from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QLabel, QTextEdit, QPushButton, QVBoxLayout, QWidget, QSizePolicy, QScrollArea, QApplication
-
+from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QLabel, QTextEdit, QPushButton, QVBoxLayout, QWidget, QSizePolicy, QScrollArea, QApplication, QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton
 from explore import *
-
-# TODO: add functionality for another window to retrieve user db details (can follow ref github for this)
-
-
-from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton
-
-from explore import connect_to_db
 
 
 class UserDetailsDialog(QDialog):
@@ -29,7 +21,7 @@ class UserDetailsDialog(QDialog):
 
         self.connected_user_label = QLabel("Connected User: N/A") 
 
-        self.submit_button = QPushButton("Conenct")
+        self.submit_button = QPushButton("Connect")
         self.submit_button.clicked.connect(self.accept)
 
         layout = QVBoxLayout()
@@ -150,16 +142,13 @@ class SQLQueryExecutor(QMainWindow):
         query = self.query_text.toPlainText()
         host, db, username, password = self.user_details_dialog.get_user_details()
         conn = connect_to_db(host, db, username, password)
+        print('DB Details',host, db, username, password)
         qep = execute_query(conn, query)
         getAllRelationsInfo(qep)
-        self.show_disk_block_info()
+        self.show_disk_block_info(conn,qep)
         visualize_qep(qep)
 
-    def show_disk_block_info(self):
-        query = self.query_text.toPlainText()
-        host, db, username, password = self.user_details_dialog.get_user_details()
-        conn = connect_to_db(host, db, username, password)
-        qep = execute_query(conn, query)
+    def show_disk_block_info(self,conn,qep):
         disk_blocks_info = get_disk_blocks_accessed(conn, qep)
 
         # Clear existing columns
@@ -194,8 +183,6 @@ class SQLQueryExecutor(QMainWindow):
             relations_column_widget = QWidget()
             relations_column_widget.setLayout(relations_layout)
             self.relation_columns.addWidget(relations_column_widget)
-
-   
 
     def show_block_content(self, conn, relation, block_id):
         content = get_block_contents(conn, relation, block_id)
