@@ -107,6 +107,11 @@ def execute_query(conn, query):
         qep = make_json_parsable(str(qep[0][0]))
         return qep
 
+    except psycopg2.Error as e:
+        error_message = f"Error executing query: {e}"
+        print(error_message)
+        return None
+
     except Exception as e:
         print(f"Error executing query: {e}")
         return None
@@ -141,7 +146,7 @@ def get_block_contents(conn, relation, block_id):
     """
 
     cursor = conn.cursor()
-    if isinstance(block_id,tuple):
+    if isinstance(block_id, tuple):
         query = f"""
         SELECT ctid, *
         FROM {relation}
@@ -153,14 +158,22 @@ def get_block_contents(conn, relation, block_id):
         FROM {relation}
         WHERE (ctid::text::point)[0]::bigint = {block_id};
         """
-    cursor.execute(query)
-    content = cursor.fetchall()
-    if content:
-        #print(relation, block_id, 'content:', content)
-        return content
-    else:
-        raise ValueError("No data found for the given block ID.")
-
+    try:
+        cursor.execute(query)
+        content = cursor.fetchall()
+        if content:
+            return content
+        else:
+            raise ValueError("No data found for the given block ID.")
+    except psycopg2.Error as e:
+        error_message = f"Error executing query: {e}"
+        print(error_message)
+        return None
+    except Exception as e:
+        error_message = f"Unexpected error: {e}"
+        print(error_message)
+        return None
+    
 
 def get_relation_block_ids(conn, relation_name):
     """Get distinct block IDs for a given relation.

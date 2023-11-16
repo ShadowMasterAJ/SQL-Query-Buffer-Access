@@ -29,7 +29,7 @@ class UserDetailsDialog(QDialog):
 
         self.connected_user_label = QLabel("Connected User: N/A") 
 
-        self.submit_button = QPushButton("Conenct")
+        self.submit_button = QPushButton("Connect")
         self.submit_button.clicked.connect(self.accept)
 
         layout = QVBoxLayout()
@@ -89,9 +89,12 @@ class SQLQueryExecutor(QMainWindow):
         self.query_text = QTextEdit()
         self.queryInputLayout.addWidget(self.query_text)
 
-        self.user_details_button = QPushButton("User Details")
+        self.user_details_button = QPushButton("Connect to Database")
         self.user_details_button.clicked.connect(self.show_user_details_dialog)
         self.queryInputLayout.addWidget(self.user_details_button)
+
+        self.connected_user_details_label = QLabel("Connected User to Database: N/A")
+        self.queryInputLayout.addWidget(self.connected_user_details_label)
 
         self.submit_button = QPushButton("Execute Query")
         self.submit_button.clicked.connect(self.on_submit_query)
@@ -116,6 +119,8 @@ class SQLQueryExecutor(QMainWindow):
             if conn:
                 # Update the connected user label in the UserDetailsDialog
                 self.user_details_dialog.set_connected_user_label(username)
+                details_text = f"Connected User {username} to Database {db}"
+                self.connected_user_details_label.setText(details_text)
 
     def _setup_disk_block_components(self):
         """Set up components for displaying disk block information."""
@@ -150,10 +155,22 @@ class SQLQueryExecutor(QMainWindow):
         query = self.query_text.toPlainText()
         host, db, username, password = self.user_details_dialog.get_user_details()
         conn = connect_to_db(host, db, username, password)
-        qep = execute_query(conn, query)
-        getAllRelationsInfo(qep)
-        self.show_disk_block_info()
-        visualize_qep(qep)
+        
+        # Check if the connection is successful
+        if conn:
+            qep = execute_query(conn, query)
+            
+            # Check if the query execution is successful
+            if qep:
+                getAllRelationsInfo(qep)
+                self.show_disk_block_info()
+                visualize_qep(qep)
+            else:
+                # Handle the case where the query execution fails
+                print("Query execution failed.")
+        else:
+            # Handle the case where the database connection fails
+            print("Database connection failed.")
 
     def show_disk_block_info(self):
         query = self.query_text.toPlainText()
