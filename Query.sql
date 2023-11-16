@@ -41,5 +41,3 @@ ORDER BY
     n_name,
     s_name,
     p_partkey;
-
--- SELECT * FROM customer join nation on customer.c_nationkey = nation.n_nationkey;

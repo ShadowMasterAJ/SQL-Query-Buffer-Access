@@ -1,6 +1,16 @@
 from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QLabel, QTextEdit, QPushButton, QVBoxLayout, QWidget, QSizePolicy, QScrollArea, QApplication, QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton
 from explore import *
+from PyQt6.QtCore import QTimer
+import sys
+import socket
+import time
+import subprocess
+import webbrowser
+import threading
+import logging
 
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 class UserDetailsDialog(QDialog):
     def __init__(self):
@@ -89,6 +99,10 @@ class SQLQueryExecutor(QMainWindow):
         self.submit_button.clicked.connect(self.on_submit_query)
         self.queryInputLayout.addWidget(self.submit_button)
 
+        self.visualise_query = QPushButton("Visualise QEP")
+        self.visualise_query.clicked.connect(self.on_click)
+        self.queryInputLayout.addWidget(self.visualise_query)
+        
         self.quit_button = QPushButton("Quit", self)
         self.quit_button.clicked.connect(lambda: QApplication.quit())
         self.quit_button.setSizePolicy(
@@ -138,6 +152,34 @@ class SQLQueryExecutor(QMainWindow):
 
         self.main_layout.addLayout(self.disk_block_layout, stretch=3)
 
+    def on_click(self):
+        logging.info("Button clicked, launching visualise_qep thread...")
+        threading.Thread(target=self.visualise_qep, daemon=True).start()
+
+    def visualise_qep(self):
+        try:
+            subprocess.Popen(["npm", "run", "serve"], cwd="pev2_component")
+            logging.info("Server starting...")
+            self.wait_for_server_ready()
+        except Exception as e:
+            logging.error(f"Error starting server: {e}")
+
+    def wait_for_server_ready(self):
+        server_ready = False
+        for _ in range(10):  # Try for 30 seconds
+            try:
+                with socket.create_connection(("localhost", 8080), timeout=1):
+                    server_ready = True
+                    break
+            except OSError:
+                time.sleep(1)
+
+        if server_ready:
+            logging.info("Server ready, opening browser...")
+            webbrowser.open("http://localhost:8080")
+        else:
+            logging.warning("Server not ready after 30 seconds.")
+        
     def on_submit_query(self):
         query = self.query_text.toPlainText()
         host, db, username, password = self.user_details_dialog.get_user_details()
@@ -146,7 +188,7 @@ class SQLQueryExecutor(QMainWindow):
         qep = execute_query(conn, query)
         getAllRelationsInfo(qep)
         self.show_disk_block_info(conn,qep)
-        visualize_qep(qep)
+        # visualize_qep(qep)
 
     def show_disk_block_info(self,conn,qep):
         disk_blocks_info = get_disk_blocks_accessed(conn, qep)
@@ -187,7 +229,7 @@ class SQLQueryExecutor(QMainWindow):
     def show_block_content(self, conn, relation, block_id):
         content = get_block_contents(conn, relation, block_id)
         bufferValue= get_No_Of_Buffers(conn,relation,block_id)
-
+        if 'shared hit'
         # # Clear existing widgets from the layout
         for i in reversed(range(self.block_contents_layout.count())):
             widget_to_remove = self.block_contents_layout.itemAt(i).widget()
