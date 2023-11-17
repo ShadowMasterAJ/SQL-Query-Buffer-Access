@@ -177,14 +177,17 @@ class SQLQueryExecutor(QMainWindow):
 
     def wait_for_server_ready(self):
         server_ready = False
-        for _ in range(3):  
+        for _ in range(3):
             for p in range(8080, 8090):  # Check ports from 8080 to 8089
+                logging.info(
+                    f"Trying port {p}...")
                 try:
                     with socket.create_connection(("localhost", p), timeout=1):
                         server_ready = True
                         port = p  # Store the port that was successful
                         break  # Exit the port loop
                 except OSError:
+                    
                     continue  # Try next port
 
             if server_ready:
@@ -252,40 +255,29 @@ class SQLQueryExecutor(QMainWindow):
     def show_block_content(self, conn, relation, block_id):
         content = getBlockContents(conn, relation, block_id)
         bufferValue = getNumBuffers(conn, relation, block_id)
-
+        for i in reversed(range(self.block_contents_layout.count())):
+            widget_to_remove = self.block_contents_layout.itemAt(i).widget()
+            if widget_to_remove is not None:
+                self.block_contents_layout.removeWidget(widget_to_remove)
+                widget_to_remove.deleteLater()
         split = bufferValue.split(' ')
-        size=0
+        size = 0
         if len(split) == 5:
-            sharedHit=split[4].split('=')
-            size=size + int(sharedHit[1])*8192
-        elif(len(split) == 6):
-            sharedHit=split[4].split('=')
-            size=size + int(sharedHit[1])*8192
-            sharedRead=split[5].split('=') 
-            size=size+int(sharedRead[1])*8192
-        if(size) < 1000000:
-            size=size/(1024)
-            # # Clear existing widgets from the layout
-            for i in reversed(range(self.block_contents_layout.count())):
-                widget_to_remove = self.block_contents_layout.itemAt(i).widget()
-                if widget_to_remove is not None:
-                    self.block_contents_layout.removeWidget(widget_to_remove)
-                    widget_to_remove.deleteLater()
-
+            sharedHit = split[4].split('=')
+            size = size + int(sharedHit[1])*8192
+        elif (len(split) == 6):
+            sharedHit = split[4].split('=')
+            size = size + int(sharedHit[1])*8192
+            sharedRead = split[5].split('=')
+            size = size+int(sharedRead[1])*8192
+        if (size) < 1000000:
+            size /= (1024)
             self.block_contents_layout.addWidget(
-                QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size(kibibytes): {size}"))
+                QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size: {size}KiB"))
         else:
-            size=size/(1024*1024)
-            # # Clear existing widgets from the layout
-            for i in reversed(range(self.block_contents_layout.count())):
-                widget_to_remove = self.block_contents_layout.itemAt(i).widget()
-                if widget_to_remove is not None:
-                    self.block_contents_layout.removeWidget(widget_to_remove)
-                    widget_to_remove.deleteLater()
-
+            size /= (1024*1024)
             self.block_contents_layout.addWidget(
-                QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size(mebibytes): {size}"))    
-        
+                QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size: {size}MiB"))
 
         for item in content:
             block_content_text = QTextEdit()

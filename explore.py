@@ -119,6 +119,16 @@ def execute_query(conn, query):
             qep = cursor.fetchall()
             # print(qep)
             qep = make_json_parsable(str(qep[0][0]))
+            # Parse the JSON string
+            try:
+                qep_json = json.loads(qep)
+                print('JSON parsed!')
+                with open('plan.json', 'w') as outfile:
+                    json.dump(qep_json, outfile)
+
+            except json.JSONDecodeError as e:
+                print('Error in JSON:', e)
+                return
             return qep
 
         except psycopg2.Error as e:
@@ -207,7 +217,7 @@ def getRelationBlockIds(conn, relation_name):
         out = cursor.fetchall()
         if out is not None:
             ls = [row[0] for row in out]
-            # print(relation_name, 'blocks:', ls)
+            print(relation_name, 'blocks:', len(ls))
             return ls
         else:
             raise ValueError("No blocks found for the given relation.")
