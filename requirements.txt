@@ -1,5 +1,6 @@
 matplotlib==3.8.1
 networkx==3.2.1
 psycopg2==2.9.9
+psycopg2-binary==2.9.9
 PyQt6==6.6.0
 PyQt6_sip==13.6.0
