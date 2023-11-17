@@ -263,15 +263,29 @@ class SQLQueryExecutor(QMainWindow):
             size=size + int(sharedHit[1])*8192
             sharedRead=split[5].split('=') 
             size=size+int(sharedRead[1])*8192
-        # # Clear existing widgets from the layout
-        for i in reversed(range(self.block_contents_layout.count())):
-            widget_to_remove = self.block_contents_layout.itemAt(i).widget()
-            if widget_to_remove is not None:
-                self.block_contents_layout.removeWidget(widget_to_remove)
-                widget_to_remove.deleteLater()
+        if(size) < 1000000:
+            size=size/(1024)
+            # # Clear existing widgets from the layout
+            for i in reversed(range(self.block_contents_layout.count())):
+                widget_to_remove = self.block_contents_layout.itemAt(i).widget()
+                if widget_to_remove is not None:
+                    self.block_contents_layout.removeWidget(widget_to_remove)
+                    widget_to_remove.deleteLater()
 
-        self.block_contents_layout.addWidget(
-            QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size(bytes): {size}"))
+            self.block_contents_layout.addWidget(
+                QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size(kibibytes): {size}"))
+        else:
+            size=size/(1024*1024)
+            # # Clear existing widgets from the layout
+            for i in reversed(range(self.block_contents_layout.count())):
+                widget_to_remove = self.block_contents_layout.itemAt(i).widget()
+                if widget_to_remove is not None:
+                    self.block_contents_layout.removeWidget(widget_to_remove)
+                    widget_to_remove.deleteLater()
+
+            self.block_contents_layout.addWidget(
+                QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size(mebibytes): {size}"))    
+        
 
         for item in content:
             block_content_text = QTextEdit()
