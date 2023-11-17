@@ -168,7 +168,7 @@ class SQLQueryExecutor(QMainWindow):
 
     def visualise_qep(self):
         try:
-            subprocess.Popen(["npm", "run", "serve"],
+            subprocess.Popen(["npm run serve"],
                              cwd="pev2_component", shell=True)
             logging.info("Server starting...")
             self.wait_for_server_ready()
@@ -177,7 +177,7 @@ class SQLQueryExecutor(QMainWindow):
 
     def wait_for_server_ready(self):
         server_ready = False
-        for _ in range(3):
+        for _ in range(7):
             for p in range(8080, 8090):  # Check ports from 8080 to 8089
                 logging.info(
                     f"Trying port {p}...")
@@ -189,9 +189,8 @@ class SQLQueryExecutor(QMainWindow):
                 except OSError:
                     
                     continue  # Try next port
-
             if server_ready:
-                break  # Exit the time loop if a connection was made
+                break
             else:
                 time.sleep(1)
 
@@ -199,7 +198,7 @@ class SQLQueryExecutor(QMainWindow):
             logging.info(f"Server ready, opening browser on port {port}...")
             webbrowser.open(f"http://localhost:{port}")
         else:
-            logging.warning("Server not ready after 3 seconds.")
+            logging.warning("Server not ready after 7 seconds.")
 
     def on_submit_query(self):
         query = self.query_text.toPlainText()
@@ -260,6 +259,7 @@ class SQLQueryExecutor(QMainWindow):
             if widget_to_remove is not None:
                 self.block_contents_layout.removeWidget(widget_to_remove)
                 widget_to_remove.deleteLater()
+        
         split = bufferValue.split(' ')
         size = 0
         if len(split) == 5:
@@ -278,9 +278,13 @@ class SQLQueryExecutor(QMainWindow):
             size /= (1024*1024)
             self.block_contents_layout.addWidget(
                 QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size: {size}MiB"))
-
+        
+        block_content_text = QTextEdit()
+        block_content_text.setReadOnly(True)
+        contents=''
         for item in content:
-            block_content_text = QTextEdit()
-            block_content_text.setReadOnly(True)
-            block_content_text.setPlainText(str(item).replace("  ", " "))
-            self.block_contents_layout.addWidget(block_content_text)
+            item2 = str(item).replace("  ", " ")+'\n'
+            contents+=item2
+        # print(contents)
+        block_content_text.setPlainText(contents)
+        self.block_contents_layout.addWidget(block_content_text)

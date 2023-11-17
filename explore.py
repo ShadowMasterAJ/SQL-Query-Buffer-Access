@@ -144,14 +144,21 @@ def execute_query(conn, query):
 def getNumBuffers(conn, relation, block_id):
     with conn.cursor() as cursor:
         try:
-            query = f"""
-            EXPLAIN (ANALYZE , BUFFERS TRUE, COSTS FALSE)
-            SELECT ctid, *
-            FROM {relation}
-            WHERE (ctid::text::point)[0]::bigint = {block_id};
-            """
+            if isinstance(block_id, tuple):
+                query = f"""
+                EXPLAIN (ANALYZE , BUFFERS TRUE, COSTS FALSE)
+                SELECT ctid, *
+                FROM {relation}
+                WHERE (ctid::text::point)[0]::bigint BETWEEN {block_id[0]} and {block_id[1]};
+                """
+            else:
+                query = f"""
+                EXPLAIN (ANALYZE , BUFFERS TRUE, COSTS FALSE)
+                SELECT ctid, *
+                FROM {relation}
+                WHERE (ctid::text::point)[0]::bigint = {block_id};
+                """
             cursor.execute(query)
-
             qep = cursor.fetchall()
             for tup in qep:
                 for value in tup:
@@ -171,8 +178,11 @@ def getBlockContents(conn, relation, block_id):
     Return: list of tuples with block_id of relation
     """
 
+
     with conn.cursor() as cursor:
         if isinstance(block_id, tuple):
+            print(block_id)
+            print(relation)
             query = f"""
             SELECT ctid, *
             FROM {relation}
@@ -187,7 +197,9 @@ def getBlockContents(conn, relation, block_id):
         try:
             cursor.execute(query)
             content = cursor.fetchall()
+            
             if content:
+                # print('Query content\n',content)
                 return content
             else:
                 raise ValueError("No data found for the given block ID.")
@@ -208,20 +220,33 @@ def getRelationBlockIds(conn, relation_name):
     relation_name -- name of the relation
     Return: list of block IDs
     """
-    with conn.cursor() as cursor:
-        query = f"""
-        SELECT DISTINCT (ctid::text::point)[0]::bigint AS block_id
-        FROM {relation_name};
-        """
-        cursor.execute(query)
-        out = cursor.fetchall()
-        if out is not None:
-            ls = [row[0] for row in out]
-            print(relation_name, 'blocks:', len(ls))
-            return ls
-        else:
-            raise ValueError("No blocks found for the given relation.")
-
+    cursor = conn.cursor()
+    query = f"""
+    SELECT DISTINCT (ctid::text::point)[0]::bigint AS block_id
+    FROM {relation_name};
+    """
+    cursor.execute(query)
+    out = cursor.fetchall()
+    if out is not None:
+        def group_consecutive_numbers_in_place(lst):
+            i = 0
+            while i < len(lst) - 1:
+                if lst[i + 1] == lst[i] + 1:
+                    start = i
+                    while i < len(lst) - 1 and lst[i + 1] == lst[i] + 1:
+                        i += 1
+                    lst[start] = (lst[start], lst[i])
+                    del lst[start + 1:i + 1]
+                else:
+                    i += 1
+            return lst
+        ls = [row[0] for row in out]
+        ls = group_consecutive_numbers_in_place(
+            sorted(ls))
+        print(relation_name, 'blocks:', len(ls))
+        return ls
+    else:
+        raise ValueError("No blocks found for the given relation.")
 
 def getDiskBlocksAccessed(conn, qep_json_str):
     blocks_accessed = {}
