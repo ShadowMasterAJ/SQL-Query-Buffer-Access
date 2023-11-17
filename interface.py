@@ -261,7 +261,7 @@ class SQLQueryExecutor(QMainWindow):
         elif(len(split) == 6):
             sharedHit=split[4].split('=')
             size=size + int(sharedHit[1])*8192
-            sharedRead=split[5].split('=')
+            sharedRead=split[5].split('=') 
             size=size+int(sharedRead[1])*8192
         # # Clear existing widgets from the layout
         for i in reversed(range(self.block_contents_layout.count())):
