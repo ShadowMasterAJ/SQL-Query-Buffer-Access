@@ -254,7 +254,15 @@ class SQLQueryExecutor(QMainWindow):
         bufferValue = getNumBuffers(conn, relation, block_id)
 
         split = bufferValue.split(' ')
-        # TODO: buffer size info
+        size=0
+        if len(split) == 5:
+            sharedHit=split[4].split('=')
+            size=size + int(sharedHit[1])*8192
+        elif(len(split) == 6):
+            sharedHit=split[4].split('=')
+            size=size + int(sharedHit[1])*8192
+            sharedRead=split[5].split('=')
+            size=size+int(sharedRead[1])*8192
         # # Clear existing widgets from the layout
         for i in reversed(range(self.block_contents_layout.count())):
             widget_to_remove = self.block_contents_layout.itemAt(i).widget()
@@ -263,7 +271,7 @@ class SQLQueryExecutor(QMainWindow):
                 widget_to_remove.deleteLater()
 
         self.block_contents_layout.addWidget(
-            QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue}"))
+            QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size(bytes): {size}"))
 
         for item in content:
             block_content_text = QTextEdit()
