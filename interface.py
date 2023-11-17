@@ -77,7 +77,7 @@ class SQLQueryExecutor(QMainWindow):
     def _setup_main_window(self):
         """Set up the main window properties."""
         self.setWindowTitle("SQL Query Executor")
-        self.setMinimumSize(1700, 1000)
+        self.setMinimumSize(1300, 700)
 
     def _setup_central_widget(self):
         """Set up the central widget and main layout."""
