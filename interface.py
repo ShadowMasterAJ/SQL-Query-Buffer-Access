@@ -99,7 +99,8 @@ class SQLQueryExecutor(QMainWindow):
         self.user_details_button.clicked.connect(self.show_user_details_dialog)
         self.queryInputLayout.addWidget(self.user_details_button)
 
-        self.connected_user_details_label = QLabel("Connected User to Database: N/A")
+        self.connected_user_details_label = QLabel(
+            "Connected User to Database: N/A")
         self.queryInputLayout.addWidget(self.connected_user_details_label)
 
         self.submit_button = QPushButton("Execute Query")
@@ -176,9 +177,7 @@ class SQLQueryExecutor(QMainWindow):
 
     def wait_for_server_ready(self):
         server_ready = False
-        port = 8080
-
-        for _ in range(3):  # Try for 30 seconds
+        for _ in range(3):  
             for p in range(8080, 8090):  # Check ports from 8080 to 8089
                 try:
                     with socket.create_connection(("localhost", p), timeout=1):
@@ -203,24 +202,19 @@ class SQLQueryExecutor(QMainWindow):
         query = self.query_text.toPlainText()
         host, db, username, password = self.user_details_dialog.get_user_details()
         conn = connect_to_db(host, db, username, password)
-        
-        # Check if the connection is successful
+
         if conn:
             qep = execute_query(conn, query)
-            
-            # Check if the query execution is successful
             if qep:
                 getAllRelationsInfo(qep)
                 self.show_disk_block_info(conn, qep)
-                #visualize_qep(qep)
             else:
                 print("Query execution failed.")
         else:
-            # Handle the case where the database connection fails
             print("Database connection failed.")
 
     def show_disk_block_info(self, conn, qep):
-        disk_blocks_info = get_disk_blocks_accessed(conn, qep)
+        disk_blocks_info = getDiskBlocksAccessed(conn, qep)
 
         # Clear existing columns
         for i in reversed(range(self.relation_columns.count())):
@@ -256,11 +250,11 @@ class SQLQueryExecutor(QMainWindow):
             self.relation_columns.addWidget(relations_column_widget)
 
     def show_block_content(self, conn, relation, block_id):
-        content = get_block_contents(conn, relation, block_id)
-        bufferValue = get_No_Of_Buffers(conn, relation, block_id)
+        content = getBlockContents(conn, relation, block_id)
+        bufferValue = getNumBuffers(conn, relation, block_id)
 
         split = bufferValue.split(' ')
-
+        # TODO: buffer size info
         # # Clear existing widgets from the layout
         for i in reversed(range(self.block_contents_layout.count())):
             widget_to_remove = self.block_contents_layout.itemAt(i).widget()
