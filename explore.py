@@ -230,16 +230,28 @@ def getRelationBlockIds(conn, relation_name):
     if out is not None:
         def group_consecutive_numbers_in_place(lst):
             i = 0
-            while i < len(lst) - 1:
-                if lst[i + 1] == lst[i] + 1:
+            batch_size = 1000
+
+            while i < len(lst):
+                # Check if the next element is consecutive and if the batch size is not exceeded
+                if i < len(lst) - 1 and lst[i + 1] == lst[i] + 1:
                     start = i
-                    while i < len(lst) - 1 and lst[i + 1] == lst[i] + 1:
+                    curr_size = 1  # Start counting the current number
+
+                    # Count consecutive numbers and ensure the batch size does not exceed 1000
+                    while i < len(lst) - 1 and lst[i + 1] == lst[i] + 1 and curr_size < batch_size:
                         i += 1
+                        curr_size += 1
+
+                    # Group the consecutive numbers
                     lst[start] = (lst[start], lst[i])
                     del lst[start + 1:i + 1]
+                    i = start + 1  # Move to the element after the grouped batch
                 else:
                     i += 1
+
             return lst
+        
         ls = [row[0] for row in out]
         ls = group_consecutive_numbers_in_place(
             sorted(ls))
