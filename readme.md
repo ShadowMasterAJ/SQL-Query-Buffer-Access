@@ -19,7 +19,15 @@ Highly recommended that you install within a virtual environment.
 ```python project.py```
 
 ## Usage
-Users should interact with the project through the graphical user interface (GUI).
+Users should interact with the project through the graphical user interface (GUI). 
+1. Login to the database using your account.
+2. Enter the query, whose QEP you want to extract, in the query window.
+3. Click on the execute query button to retrieve the QEP.
+4. On the right side you will find the blocks in each relation and their ids.
+5. Click on the block id to get the contents stored inside the block. 
+    5.1 The records shown for block ids shown in tuples are the contents for the blocks with ids ranging from value 1 to value 2 of the tuple. 
+    5.2 Eg. Clicking on block id: (1,10) would show the records stored in blocks 1 to 10.
+6. Click on visualise QEP to get a graphical representation of the QEP. Note that this button will launch a localhost server, containing the graph, in your default browser.
 
 ## Troubleshooting
 - If you encounter any issues related to missing modules or dependencies, make sure to check the installation steps and update your package.json accordingly.
