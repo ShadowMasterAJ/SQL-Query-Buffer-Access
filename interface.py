@@ -187,7 +187,7 @@ class SQLQueryExecutor(QMainWindow):
                         port = p  # Store the port that was successful
                         break  # Exit the port loop
                 except OSError:
-                    
+
                     continue  # Try next port
             if server_ready:
                 break
@@ -259,7 +259,7 @@ class SQLQueryExecutor(QMainWindow):
             if widget_to_remove is not None:
                 self.block_contents_layout.removeWidget(widget_to_remove)
                 widget_to_remove.deleteLater()
-        
+
         split = bufferValue.split(' ')
         size = 0
         if len(split) == 5:
@@ -278,13 +278,13 @@ class SQLQueryExecutor(QMainWindow):
             size /= (1024*1024)
             self.block_contents_layout.addWidget(
                 QLabel(f"Relation: {relation} | Block ID: {block_id} | {bufferValue} | Buffer size: {size}MiB"))
-        
+
         block_content_text = QTextEdit()
         block_content_text.setReadOnly(True)
-        contents=''
+        contents = ''
         for item in content:
-            item2 = str(item).replace("  ", " ")+'\n'
-            contents+=item2
+            item2 = str(item).replace("  ", " ")+f"\n{'-'*150}\n"
+            contents += item2
         # print(contents)
         block_content_text.setPlainText(contents)
         self.block_contents_layout.addWidget(block_content_text)
