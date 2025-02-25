@@ -1,4 +1,4 @@
-# CZ4031 PROJECT 2: WHAT IS YOUR QUERY ACCESSING & AT WHAT COST?
+# WHAT IS YOUR QUERY ACCESSING & AT WHAT COST (Visualised)? 
 
 ## Installation
 Highly recommended that you install within a virtual environment.
